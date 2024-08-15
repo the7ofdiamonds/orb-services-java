@@ -16,3 +16,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+  kafka:
+    producer:
+      bootstrap-servers: ${KAFKA_ADDRESS:localhost:9092}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

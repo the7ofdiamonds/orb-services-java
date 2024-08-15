@@ -79,11 +79,6 @@ public class ServicesController {
     @PostMapping("/request/{id}")
     public ResponseEntity<ResponseServiceRequest> request(@PathVariable("id") String id, @RequestBody RequestService request) throws Exception {
         try {
-            log.info(String.valueOf(request.getId()));
-            log.info(String.valueOf(request.getDate()));
-            log.info(String.valueOf(request.getTime()));
-            log.info(String.valueOf(request.getAddress()));
-            log.info(String.valueOf(request.getCoordinates()));
             return ResponseEntity.status(HttpStatus.CREATED).body(services.request(request));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
