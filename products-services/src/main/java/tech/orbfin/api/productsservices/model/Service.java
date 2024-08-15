@@ -31,6 +31,7 @@ public class Service {
     String id;
     String created;
     String updated;
+    String type;
     String name;
     String content;
     String description;
