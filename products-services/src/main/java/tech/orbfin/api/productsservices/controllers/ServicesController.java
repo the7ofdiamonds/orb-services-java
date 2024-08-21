@@ -66,23 +66,10 @@ public class ServicesController {
     @PostMapping("/")
     public ResponseEntity<ResponseServices> servicesBy(@RequestBody RequestServices request) throws Exception {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(services.by(request));
+            return ResponseEntity.status(HttpStatus.CREATED).body(services.by(request.getType(), request.getPrice(), request.getAddress(), request.getCoordinates()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseServices.builder()
-                            .errorMessage(e.getMessage())
-                            .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                            .build());
-        }
-    }
-
-    @PostMapping("/request/{id}")
-    public ResponseEntity<ResponseServiceRequest> request(@PathVariable("id") String id, @RequestBody RequestService request) throws Exception {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(services.request(request));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseServiceRequest.builder()
                             .errorMessage(e.getMessage())
                             .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                             .build());

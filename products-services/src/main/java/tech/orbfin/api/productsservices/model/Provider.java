@@ -20,22 +20,23 @@ import java.util.List;
 @Getter
 @Component
 @Entity
-@Table(name = "services")
-public class Service {
+@Table(name = "providers")
+public class Provider {
     @Id
     String id;
     String created;
     String updated;
-    String type;
     String name;
-    String content;
-    String description;
-    Double price;
-    List<String> features;
-    String onboarding_link;
-    String icon;
-    String button_icon;
-    String action_word;
-    String price_id;
+    String bio;
+    String logo;
     String url;
+    @OneToMany
+    @JoinColumn(name = "services", referencedColumnName = "id")
+    List<Service> services;
+    @OneToOne
+    @JoinColumn(name = "address_id", referencedColumnName = "id")
+    Address address;
+    @OneToOne
+    @JoinColumn(name = "coordinates_id", referencedColumnName = "id")
+    Coordinates coordinates;
 }

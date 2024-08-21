@@ -1,14 +1,12 @@
 package tech.orbfin.api.productsservices.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import lombok.*;
-
 import org.springframework.stereotype.Component;
+import tech.orbfin.api.productsservices.model.Provider;
+import tech.orbfin.api.productsservices.model.Service;
 
 import java.util.List;
-
-import tech.orbfin.api.productsservices.model.Service;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,9 +16,8 @@ import tech.orbfin.api.productsservices.model.Service;
 @Setter
 @Getter
 @Component
-public class ResponseServiceRequest {
-    String successMessage;
-    String cautionMessage;
+public class ResponseProviders {
+    List<Provider> providers;
     String errorMessage;
     Integer statusCode;
 }

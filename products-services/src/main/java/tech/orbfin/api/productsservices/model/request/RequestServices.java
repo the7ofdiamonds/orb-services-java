@@ -6,6 +6,10 @@ import lombok.*;
 
 import org.springframework.stereotype.Component;
 
+import tech.orbfin.api.productsservices.model.Address;
+import tech.orbfin.api.productsservices.model.Coordinates;
+import tech.orbfin.api.productsservices.model.Location;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -17,10 +21,9 @@ import org.springframework.stereotype.Component;
 public class RequestServices {
     String id;
     String type;
-    String streetAddress;
-    String city;
-    String state;
-    String zipcode;
-    String county;
-    Integer price;
+    String date;
+    String time;
+    Double price;
+    Address address;
+    Coordinates coordinates;
 }
