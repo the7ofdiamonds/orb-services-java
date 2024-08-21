@@ -19,13 +19,15 @@ import tech.orbfin.api.productsservices.model.Address;
 import tech.orbfin.api.productsservices.model.Coordinates;
 import tech.orbfin.api.productsservices.model.Provider;
 import tech.orbfin.api.productsservices.model.Service;
+
 import tech.orbfin.api.productsservices.model.request.RequestService;
+
 import tech.orbfin.api.productsservices.model.response.ResponseProviders;
 import tech.orbfin.api.productsservices.model.response.ResponseServiceRequest;
-import tech.orbfin.api.productsservices.model.response.ResponseServices;
 
-import tech.orbfin.api.productsservices.repositories.IRepositoryServices;
+import tech.orbfin.api.productsservices.repositories.IRepositoryProviders;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -33,21 +35,27 @@ import java.util.List;
 @Transactional
 @org.springframework.stereotype.Service
 public class Providers {
-    private final IRepositoryServices iRepositoryServices;
+    private final IRepositoryProviders iRepositoryProviders;
     private final EntityManager entityManager;
     private final KafkaTemplate<String, RequestService> kafkaTemplate;
 
-    public ResponseProviders by(String type, Double price, Address address, Coordinates coordinates) throws Exception {
+    public List<Provider> byCoordinates(Coordinates coordinates) throws Exception {
+        try {
+            List<Provider> providers = List.of();
+
+            return providers;
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    public List<Address> byAddress(Address address) throws Exception {
         try {
             CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-            CriteriaQuery<Provider> query = cb.createQuery(Provider.class);
-            Root<Provider> root = query.from(Provider.class);
+            CriteriaQuery<Address> query = cb.createQuery(Address.class);
+            Root<Address> root = query.from(Address.class);
 
             Predicate predicate = cb.conjunction();
-
-            if (type != null) {
-                predicate = cb.and(predicate, cb.equal(root.get("type"), type));
-            }
 
             String streetAddress = address.getStreetAddress();
             String city = address.getCity();
@@ -70,14 +78,53 @@ public class Providers {
                 predicate = cb.and(predicate, cb.equal(root.get("zipcode"), zipcode));
             }
 
-//        Search by coordinates
+            query.where(predicate);
+            List<Address> addressList = entityManager.createQuery(query).getResultList();
 
-            if (price != null && price > 0) {
-                predicate = cb.and(predicate, cb.equal(root.get("price"), price));
+            return addressList;
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    public ResponseProviders by(Double price, String type, Address address, Coordinates coordinates) throws Exception {
+        try {
+            List<Provider> providers = new ArrayList<>();
+            List<Provider> providerList = new ArrayList<>();
+
+            if (coordinates != null) {
+                List<Provider> providersByCoords = byCoordinates(coordinates);
             }
 
-            query.where(predicate);
-            List<Provider> providerList = entityManager.createQuery(query).getResultList();
+            if (address != null && !address.isEmpty()) {
+                List<Address> providersByAddress = byAddress(address);
+                for (Address addr : providersByAddress) {
+                    Provider provider = addr.getProvider();
+                    List<Service> services = provider.getServices();
+
+                    for (Service service : services) {
+                        String serviceType = service.getType();
+
+                        if (serviceType == type) {
+                            providers.add(provider);
+                        }
+                    }
+                }
+            }
+
+            if (price != null && price > 0) {
+                for (Provider provider : providers) {
+                    List<Service> services = provider.getServices();
+
+                    for (Service service : services) {
+                        Double providerPrice = service.getPrice();
+
+                        if (price <= providerPrice) {
+                            providerList.add(provider);
+                        }
+                    }
+                }
+            }
 
             if (providerList.isEmpty()) {
                 ResponseProviders response = ResponseProviders.builder()
@@ -110,7 +157,10 @@ public class Providers {
             Coordinates coordinates = request.getCoordinates();
 
             String errorMessage = null;
-//            Request to particular service provider using id
+
+            List<Provider> providers = new ArrayList<>();
+            Provider provider = iRepositoryProviders.getProviderByID(id);
+            providers.add(provider);
 
             if (type == null) {
                 errorMessage = "A type is required to schedule a service.";
@@ -141,8 +191,11 @@ public class Providers {
                 return response;
             }
 
-            ResponseProviders responseProviders = by(type, price, address, coordinates);
-            List<Provider> providers = responseProviders.getProviders();
+            ResponseProviders responseProviders = by(price, type, address, coordinates);
+
+            if (responseProviders.getProviders() != null && !responseProviders.getProviders().isEmpty()) {
+                providers = responseProviders.getProviders();
+            }
 
             if (providers == null || providers.isEmpty()) {
                 String cautionMessage = "Services requested are currently unavailable you will be notified when any changes have been made.";
