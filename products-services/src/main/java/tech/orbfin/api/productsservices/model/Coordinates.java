@@ -5,19 +5,21 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "service_coordinates")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Data
+@Entity
+@Table(name = "provider_coordinates")
 public class Coordinates {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long coordinatesId;
+    private Long id;
 
     private BigDecimal latitude;
     private BigDecimal longitude;
-}
 
+    @ManyToOne
+    @JoinColumn(name = "provider_id", nullable = false)
+    private Provider provider;
+}

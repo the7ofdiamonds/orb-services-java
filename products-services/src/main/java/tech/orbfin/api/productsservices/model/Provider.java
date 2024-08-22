@@ -3,40 +3,36 @@ package tech.orbfin.api.productsservices.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.persistence.*;
-import lombok.*;
 
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import lombok.*;
 
 import java.util.List;
 
-@Transactional
+import tech.orbfin.api.productsservices.model.Email;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder
 @Data
-@Setter
-@Getter
-@Component
 @Entity
 @Table(name = "providers")
 public class Provider {
     @Id
-    String id;
+    Long id;
     String created;
     String updated;
     String name;
     String bio;
     String logo;
     String url;
-    @OneToMany
-    @JoinColumn(name = "services", referencedColumnName = "id")
+    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, orphanRemoval = true)
+    @jakarta.validation.constraints.Email(message = "Email should be valid")
+    private List<Email> emails;
+    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Service> services;
-    @OneToOne
-    @JoinColumn(name = "address_id", referencedColumnName = "id")
-    Address address;
-    @OneToOne
-    @JoinColumn(name = "coordinates_id", referencedColumnName = "id")
-    Coordinates coordinates;
+    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<Address> address;
+    @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<Coordinates> coordinates;
 }

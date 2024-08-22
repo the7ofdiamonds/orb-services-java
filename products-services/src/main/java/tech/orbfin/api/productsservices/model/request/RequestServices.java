@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 import tech.orbfin.api.productsservices.model.Address;
 import tech.orbfin.api.productsservices.model.Coordinates;
-import tech.orbfin.api.productsservices.model.Location;
 
 @NoArgsConstructor
 @AllArgsConstructor

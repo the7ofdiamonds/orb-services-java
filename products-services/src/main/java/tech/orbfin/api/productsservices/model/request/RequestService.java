@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import tech.orbfin.api.productsservices.model.Address;
 import tech.orbfin.api.productsservices.model.Coordinates;
 
+import java.util.List;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -24,6 +26,9 @@ public class RequestService {
 
     @JsonProperty("type")
     private String type;
+
+    @JsonProperty("providers")
+    private List<Long> providers;
 
     @JsonProperty("date")
     private String date;

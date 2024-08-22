@@ -5,20 +5,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.*;
 
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 
-@Transactional
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder
 @Data
-@Setter
-@Getter
-@Component
 @Entity
 @Table(name = "services")
 public class Service {
@@ -38,4 +31,7 @@ public class Service {
     String action_word;
     String price_id;
     String url;
+    @ManyToOne
+    @JoinColumn(name = "provider_id", nullable = false)
+    private Provider provider;
 }

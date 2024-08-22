@@ -61,29 +61,36 @@ public class Providers {
             String city = address.getCity();
             String state = address.getState();
             String zipcode = address.getZipcode();
+            String country = address.getCountry();
 
-            if (streetAddress != null) {
+            if (streetAddress != null && !streetAddress.trim().isEmpty()) {
                 predicate = cb.and(predicate, cb.equal(root.get("streetAddress"), streetAddress));
             }
 
-            if (city != null) {
+            if (city != null && !city.trim().isEmpty()) {
                 predicate = cb.and(predicate, cb.equal(root.get("city"), city));
             }
 
-            if (state != null) {
+            if (state != null && !state.trim().isEmpty()) {
                 predicate = cb.and(predicate, cb.equal(root.get("state"), state));
             }
 
-            if (zipcode != null) {
+            if (zipcode != null && !zipcode.trim().isEmpty()) {
                 predicate = cb.and(predicate, cb.equal(root.get("zipcode"), zipcode));
+            }
+
+            if (country != null && !country.trim().isEmpty()) {
+                predicate = cb.and(predicate, cb.equal(root.get("country"), country));
             }
 
             query.where(predicate);
             List<Address> addressList = entityManager.createQuery(query).getResultList();
 
+            log.info("Found {} matching addresses", addressList.size());
             return addressList;
         } catch (Exception e) {
-            throw new Exception(e.getMessage());
+            log.error("Error querying addresses", e);
+            throw new Exception("Error querying addresses: " + e.getMessage(), e);
         }
     }
 
@@ -92,57 +99,64 @@ public class Providers {
             List<Provider> providers = new ArrayList<>();
             List<Provider> providerList = new ArrayList<>();
 
+            // Filter by coordinates if provided
             if (coordinates != null) {
                 List<Provider> providersByCoords = byCoordinates(coordinates);
+                providers.addAll(providersByCoords);  // Add these providers to the list
             }
 
+            // Filter by address and service type if address is not empty
             if (address != null && !address.isEmpty()) {
                 List<Address> providersByAddress = byAddress(address);
+
                 for (Address addr : providersByAddress) {
                     Provider provider = addr.getProvider();
+
                     List<Service> services = provider.getServices();
 
                     for (Service service : services) {
-                        String serviceType = service.getType();
 
-                        if (serviceType == type) {
+                        if (service.getType().equals(type)) {
                             providers.add(provider);
+                            break;  // Exit inner loop if service type matches
                         }
                     }
                 }
             }
 
+            // Filter providers by price if price is provided
             if (price != null && price > 0) {
                 for (Provider provider : providers) {
                     List<Service> services = provider.getServices();
 
                     for (Service service : services) {
-                        Double providerPrice = service.getPrice();
-
-                        if (price <= providerPrice) {
+                        if (price <= service.getPrice()) {
                             providerList.add(provider);
+                            break;  // Exit inner loop if price condition is satisfied
                         }
                     }
                 }
+            } else {
+                providerList.addAll(providers);  // If no price is provided, use all filtered providers
             }
 
+            // Return response based on the filtered providers list
             if (providerList.isEmpty()) {
-                ResponseProviders response = ResponseProviders.builder()
+                return ResponseProviders.builder()
                         .errorMessage("There are no providers of this service available at this time.")
                         .statusCode(HttpStatus.OK.value())
                         .build();
-
-                return response;
             }
 
-            ResponseProviders response = ResponseProviders.builder()
+            return ResponseProviders.builder()
                     .providers(providerList)
                     .statusCode(HttpStatus.OK.value())
                     .build();
 
-            return response;
         } catch (Exception e) {
-            throw new Exception(e);
+            // Log and throw a more specific exception
+            log.error("Error fetching providers", e);
+            throw new Exception("Error fetching providers: " + e.getMessage(), e);
         }
     }
 
@@ -159,8 +173,14 @@ public class Providers {
             String errorMessage = null;
 
             List<Provider> providers = new ArrayList<>();
-            Provider provider = iRepositoryProviders.getProviderByID(id);
-            providers.add(provider);
+
+//            if (id != null) {
+//                Provider provider = iRepositoryProviders.getProviderByID(id);
+//
+//                if (provider != null) {
+//                    providers.add(provider);
+//                }
+//            }
 
             if (type == null) {
                 errorMessage = "A type is required to schedule a service.";
@@ -193,11 +213,15 @@ public class Providers {
 
             ResponseProviders responseProviders = by(price, type, address, coordinates);
 
-            if (responseProviders.getProviders() != null && !responseProviders.getProviders().isEmpty()) {
-                providers = responseProviders.getProviders();
+            if (responseProviders.getProviders() != null && responseProviders.getProviders().size() > 0 && !responseProviders.getProviders().isEmpty()) {
+                List<Provider> queriedProviders = responseProviders.getProviders();
+
+                for (Provider provider : queriedProviders) {
+                    providers.add(provider);
+                }
             }
 
-            if (providers == null || providers.isEmpty()) {
+            if (providers == null || providers.size() == 0 || providers.isEmpty()) {
                 String cautionMessage = "Services requested are currently unavailable you will be notified when any changes have been made.";
                 ResponseServiceRequest response = ResponseServiceRequest.builder()
                         .cautionMessage(cautionMessage)
@@ -207,7 +231,21 @@ public class Providers {
                 return response;
             }
 
-            kafkaTemplate.send(ConfigKafkaTopics.NOTARY_REQUEST, request);
+            List<Long> providerIDList = new ArrayList<>();
+
+           for (Provider provider : providers) {
+               Long providerId = provider.getId();
+
+                if(providerId != null && providerId > 0) {
+                    providerIDList.add(providerId);
+                }
+            }
+
+           if(providerIDList.size() > 0) {
+               request.setProviders(providerIDList);
+
+               kafkaTemplate.send(ConfigKafkaTopics.NOTARY_REQUEST, request);
+           }
 
             ResponseServiceRequest response = ResponseServiceRequest.builder()
                     .successMessage("Your request has been received awaiting confirmation please be attentive to your account")

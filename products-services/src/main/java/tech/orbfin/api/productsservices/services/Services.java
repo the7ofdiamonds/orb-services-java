@@ -14,14 +14,10 @@ import org.springframework.http.HttpStatus;
 
 import org.springframework.kafka.core.KafkaTemplate;
 
-import tech.orbfin.api.productsservices.configurations.ConfigKafkaTopics;
-
 import tech.orbfin.api.productsservices.model.Address;
 import tech.orbfin.api.productsservices.model.Coordinates;
-import tech.orbfin.api.productsservices.model.Location;
 import tech.orbfin.api.productsservices.model.request.RequestService;
 import tech.orbfin.api.productsservices.model.response.ResponseService;
-import tech.orbfin.api.productsservices.model.response.ResponseServiceRequest;
 import tech.orbfin.api.productsservices.model.response.ResponseServices;
 import tech.orbfin.api.productsservices.model.Service;
 
@@ -51,7 +47,6 @@ public class Services {
                 return response;
             }
 
-            log.info(String.valueOf(serviceList.get(0)));
             ResponseServices response = ResponseServices.builder()
                     .services(serviceList)
                     .statusCode(HttpStatus.OK.value())
