@@ -5,13 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.stereotype.Component;
+
 import org.springframework.web.bind.annotation.*;
 
-import tech.orbfin.api.productsservices.model.request.RequestService;
 import tech.orbfin.api.productsservices.model.request.RequestServices;
 import tech.orbfin.api.productsservices.model.response.ResponseService;
-import tech.orbfin.api.productsservices.model.response.ResponseServiceRequest;
 import tech.orbfin.api.productsservices.model.response.ResponseServices;
 
 import tech.orbfin.api.productsservices.services.Services;
@@ -51,7 +51,7 @@ public class ServicesController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseService> service(@PathVariable("id") String id) throws Exception {
+    public ResponseEntity<ResponseService> service(@PathVariable("id") Long id) throws Exception {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(services.byID(id));
         } catch (Exception e) {

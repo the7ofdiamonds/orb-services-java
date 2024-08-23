@@ -32,7 +32,7 @@ import java.util.List;
 public class Services {
     private final IRepositoryServices iRepositoryServices;
     private final EntityManager entityManager;
-    private final KafkaTemplate<String, RequestService> kafkaTemplate;
+//    private final KafkaTemplate<String, RequestService> kafkaTemplate;
 
     public ResponseServices all() throws Exception {
         try {
@@ -144,7 +144,7 @@ public class Services {
         }
     }
 
-    public ResponseService byID(String id) throws Exception {
+    public ResponseService byID(Long id) throws Exception {
         try {
             Service service = iRepositoryServices.getServiceByID(id);
 

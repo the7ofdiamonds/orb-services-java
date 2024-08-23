@@ -2,13 +2,14 @@ package tech.orbfin.api.productsservices.model.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import org.springframework.stereotype.Component;
 
 import tech.orbfin.api.productsservices.model.Address;
 import tech.orbfin.api.productsservices.model.Coordinates;
+
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,25 +19,13 @@ import tech.orbfin.api.productsservices.model.Coordinates;
 @Setter
 @Getter
 @Component
-public class RequestService {
-    @JsonProperty("id")
+public class RequestProvider {
     private Long id;
-
-    @JsonProperty("type")
     private String type;
-
-    @JsonProperty("date")
+    private List<Long> providers;
     private String date;
-
-    @JsonProperty("time")
     private String time;
-
-    @JsonProperty("price")
     private Double price;
-
-    @JsonProperty("address")
     private Address address;
-
-    @JsonProperty("coordinates")
     private Coordinates coordinates;
 }

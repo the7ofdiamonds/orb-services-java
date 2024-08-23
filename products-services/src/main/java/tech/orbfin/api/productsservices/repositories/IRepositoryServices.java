@@ -24,5 +24,5 @@ public interface IRepositoryServices extends JpaRepository<Service, Long> {
 
     @Transactional
     @Query(nativeQuery = true, value = "CALL getServiceByID(:p_id)")
-    public Service getServiceByID(@Param("p_id") String id);
+    public Service getServiceByID(@Param("p_id") Long id);
 }

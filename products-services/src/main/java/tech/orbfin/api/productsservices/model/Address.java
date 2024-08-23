@@ -1,5 +1,7 @@
 package tech.orbfin.api.productsservices.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 
 import lombok.*;
@@ -25,15 +27,16 @@ public class Address {
 
     @ManyToOne
     @JoinColumn(name = "provider_id", nullable = false)
+    @JsonIgnore
     private Provider provider;
 
     public Boolean isEmpty() {
         if (
-                (streetAddress == "" || streetAddress.isEmpty()) &&
-                        (city == null || city.isEmpty()) &&
-                        (state == null || state.isEmpty()) &&
-                        (zipcode == null || zipcode.isEmpty()) &&
-                        (country == null || country.isEmpty())
+            (streetAddress == null || streetAddress.isEmpty()) &&
+                    (city == null || city.isEmpty()) &&
+                    (state == null || state.isEmpty()) &&
+                    (zipcode == null || zipcode.isEmpty()) &&
+                    (country == null || country.isEmpty())
         ) {
             return true;
         } else {

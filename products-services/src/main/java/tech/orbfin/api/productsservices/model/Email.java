@@ -1,5 +1,6 @@
 package tech.orbfin.api.productsservices.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import lombok.*;
@@ -30,5 +31,6 @@ public class Email {
 
     @ManyToOne
     @JoinColumn(name = "provider_id", nullable = false)
+    @JsonBackReference
     private Provider provider;
 }

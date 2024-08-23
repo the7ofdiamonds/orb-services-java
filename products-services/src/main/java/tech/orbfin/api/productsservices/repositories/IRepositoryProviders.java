@@ -17,5 +17,9 @@ public interface IRepositoryProviders extends JpaRepository<Provider, Long> {
 
     @Transactional
     @Query(nativeQuery = true, value = "CALL getProviderByID(:p_id)")
-    public Provider getProviderByID(@Param("p_id") String id);
+    public Provider getProviderByID(@Param("p_id") Long id);
+
+    @Transactional
+    @Query(nativeQuery = true, value = "CALL getProviderServices(:p_id)")
+    public String getProviderServices(@Param("p_id") Long id);
 }

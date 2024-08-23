@@ -20,7 +20,7 @@ import java.util.Properties;
 import java.util.HashMap;
 import java.util.Map;
 
-import tech.orbfin.api.productsservices.model.request.RequestService;
+import tech.orbfin.api.productsservices.model.request.RequestProvider;
 
 @Configuration
 public class ConfigKafka {
@@ -34,19 +34,19 @@ public class ConfigKafka {
     }
 
     @Bean
-    public ProducerFactory<String, RequestService> producerFactory() {
+    public ProducerFactory<String, RequestProvider> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
-        configProps.put(JsonSerializer.TYPE_MAPPINGS, "RequestService:tech.orbfin.api.productsservices.model.request.RequestService");
+        configProps.put(JsonSerializer.TYPE_MAPPINGS, "RequestProvider:tech.orbfin.api.productsservices.model.request.RequestProvider");
 
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
     @Bean
-    public KafkaTemplate<String, RequestService> kafkaTemplate() {
+    public KafkaTemplate<String, RequestProvider> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 

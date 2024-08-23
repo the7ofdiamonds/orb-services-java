@@ -1,12 +1,18 @@
 package tech.orbfin.api.productsservices.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
+
 import lombok.*;
+
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@Component
 @Builder
 @Data
 @Entity
@@ -21,5 +27,6 @@ public class Coordinates {
 
     @ManyToOne
     @JoinColumn(name = "provider_id", nullable = false)
+    @JsonIgnore
     private Provider provider;
 }

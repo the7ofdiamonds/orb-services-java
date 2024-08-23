@@ -5,6 +5,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+
 import jakarta.transaction.Transactional;
 
 import lombok.AllArgsConstructor;
@@ -20,24 +21,30 @@ import tech.orbfin.api.productsservices.model.Coordinates;
 import tech.orbfin.api.productsservices.model.Provider;
 import tech.orbfin.api.productsservices.model.Service;
 
+import tech.orbfin.api.productsservices.model.request.RequestProvider;
 import tech.orbfin.api.productsservices.model.request.RequestService;
 
 import tech.orbfin.api.productsservices.model.response.ResponseProviders;
 import tech.orbfin.api.productsservices.model.response.ResponseServiceRequest;
 
 import tech.orbfin.api.productsservices.repositories.IRepositoryProviders;
+import tech.orbfin.api.productsservices.repositories.IRepositoryServices;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor
 @Transactional
 @org.springframework.stereotype.Service
 public class Providers {
+    private final IRepositoryServices iRepositoryServices;
     private final IRepositoryProviders iRepositoryProviders;
     private final EntityManager entityManager;
-    private final KafkaTemplate<String, RequestService> kafkaTemplate;
+    private final KafkaTemplate<String, RequestProvider> kafkaTemplate;
 
     public List<Provider> byCoordinates(Coordinates coordinates) throws Exception {
         try {
@@ -97,50 +104,51 @@ public class Providers {
     public ResponseProviders by(Double price, String type, Address address, Coordinates coordinates) throws Exception {
         try {
             List<Provider> providers = new ArrayList<>();
-            List<Provider> providerList = new ArrayList<>();
+            List<Long> providerList = new ArrayList<>();
 
-            // Filter by coordinates if provided
-            if (coordinates != null) {
-                List<Provider> providersByCoords = byCoordinates(coordinates);
-                providers.addAll(providersByCoords);  // Add these providers to the list
-            }
+//            if (coordinates != null) {
+//                List<Provider> providersByCoords = byCoordinates(coordinates);
+//                providers.addAll(providersByCoords);
+//            }
 
-            // Filter by address and service type if address is not empty
             if (address != null && !address.isEmpty()) {
                 List<Address> providersByAddress = byAddress(address);
 
                 for (Address addr : providersByAddress) {
                     Provider provider = addr.getProvider();
+                    Long providerID = provider.getId();
 
-                    List<Service> services = provider.getServices();
+                    List<Long> services = new ArrayList<>();
 
-                    for (Service service : services) {
+                    String serviceIDs = iRepositoryProviders.getProviderServices(providerID);
+
+                    if (serviceIDs != null && !serviceIDs.isEmpty()) {
+                        serviceIDs = serviceIDs.replaceAll("^'|'$", "").trim();
+                        services = Arrays.stream(serviceIDs.split(","))
+                                .map(String::trim)
+                                .map(Long::parseLong)
+                                .collect(Collectors.toList());
+                    }
+
+                    for(Long serviceID : services) {
+                        Service service = iRepositoryServices.getServiceByID(serviceID);
 
                         if (service.getType().equals(type)) {
                             providers.add(provider);
-                            break;  // Exit inner loop if service type matches
+                        }
+
+                        if (price != null && price > 0) {
+                            if (price <= service.getPrice()) {
+                                providerList.add(provider.getId());
+                                break;
+                            }
+                        } else {
+                            providerList.add(provider.getId());
                         }
                     }
                 }
             }
 
-            // Filter providers by price if price is provided
-            if (price != null && price > 0) {
-                for (Provider provider : providers) {
-                    List<Service> services = provider.getServices();
-
-                    for (Service service : services) {
-                        if (price <= service.getPrice()) {
-                            providerList.add(provider);
-                            break;  // Exit inner loop if price condition is satisfied
-                        }
-                    }
-                }
-            } else {
-                providerList.addAll(providers);  // If no price is provided, use all filtered providers
-            }
-
-            // Return response based on the filtered providers list
             if (providerList.isEmpty()) {
                 return ResponseProviders.builder()
                         .errorMessage("There are no providers of this service available at this time.")
@@ -154,7 +162,6 @@ public class Providers {
                     .build();
 
         } catch (Exception e) {
-            // Log and throw a more specific exception
             log.error("Error fetching providers", e);
             throw new Exception("Error fetching providers: " + e.getMessage(), e);
         }
@@ -162,7 +169,7 @@ public class Providers {
 
     public ResponseServiceRequest request(RequestService request) throws Exception {
         try {
-            String id = request.getId();
+            Long id = request.getId();
             String type = request.getType();
             String date = request.getDate();
             String time = request.getTime();
@@ -172,15 +179,13 @@ public class Providers {
 
             String errorMessage = null;
 
-            List<Provider> providers = new ArrayList<>();
+            if (id != null) {
+                Service service = iRepositoryServices.getServiceByID(id);
 
-//            if (id != null) {
-//                Provider provider = iRepositoryProviders.getProviderByID(id);
-//
-//                if (provider != null) {
-//                    providers.add(provider);
-//                }
-//            }
+                if (service == null || service.getPrice() < 0) {
+                    errorMessage = "A service is required to schedule.";
+                }
+            }
 
             if (type == null) {
                 errorMessage = "A type is required to schedule a service.";
@@ -213,38 +218,21 @@ public class Providers {
 
             ResponseProviders responseProviders = by(price, type, address, coordinates);
 
-            if (responseProviders.getProviders() != null && responseProviders.getProviders().size() > 0 && !responseProviders.getProviders().isEmpty()) {
-                List<Provider> queriedProviders = responseProviders.getProviders();
-
-                for (Provider provider : queriedProviders) {
-                    providers.add(provider);
-                }
-            }
-
-            if (providers == null || providers.size() == 0 || providers.isEmpty()) {
-                String cautionMessage = "Services requested are currently unavailable you will be notified when any changes have been made.";
-                ResponseServiceRequest response = ResponseServiceRequest.builder()
-                        .cautionMessage(cautionMessage)
-                        .statusCode(HttpStatus.OK.value())
-                        .build();
-
-                return response;
-            }
-
-            List<Long> providerIDList = new ArrayList<>();
-
-           for (Provider provider : providers) {
-               Long providerId = provider.getId();
-
-                if(providerId != null && providerId > 0) {
-                    providerIDList.add(providerId);
-                }
-            }
+            List<Long> providerIDList = responseProviders.getProviders();
 
            if(providerIDList.size() > 0) {
-               request.setProviders(providerIDList);
+               RequestProvider requestProvider = RequestProvider.builder()
+                       .id(id)
+                       .type(type)
+                       .date(date)
+                       .time(time)
+                       .price(price)
+                       .address(address)
+                       .coordinates(coordinates)
+                       .providers(providerIDList)
+                       .build();
 
-               kafkaTemplate.send(ConfigKafkaTopics.NOTARY_REQUEST, request);
+               kafkaTemplate.send(ConfigKafkaTopics.NOTARY_REQUEST, requestProvider);
            }
 
             ResponseServiceRequest response = ResponseServiceRequest.builder()

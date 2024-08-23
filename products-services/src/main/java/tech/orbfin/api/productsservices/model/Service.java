@@ -1,12 +1,17 @@
 package tech.orbfin.api.productsservices.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.persistence.*;
+
 import lombok.*;
+
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Transactional
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -16,7 +21,7 @@ import java.util.List;
 @Table(name = "services")
 public class Service {
     @Id
-    String id;
+    Integer id;
     String created;
     String updated;
     String type;
@@ -31,7 +36,4 @@ public class Service {
     String action_word;
     String price_id;
     String url;
-    @ManyToOne
-    @JoinColumn(name = "provider_id", nullable = false)
-    private Provider provider;
 }
