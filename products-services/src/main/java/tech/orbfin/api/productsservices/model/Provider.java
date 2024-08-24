@@ -32,7 +32,7 @@ public class Provider {
     @JsonManagedReference
     private List<Email> emails;
     @ElementCollection
-    @CollectionTable(name = "services", joinColumns = @JoinColumn(name = "provider_id"))
+    @CollectionTable(name = "services", joinColumns = @JoinColumn(name = "id"))
     List<Long> services;
     @OneToMany(mappedBy = "provider", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference

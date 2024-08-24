@@ -1,6 +1,5 @@
 package tech.orbfin.api.productsservices.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.persistence.*;
@@ -21,7 +20,9 @@ import java.util.List;
 @Table(name = "services")
 public class Service {
     @Id
-    Integer id;
+    Long id;
+    @Column(name = "service_id")
+    String serviceID;
     String created;
     String updated;
     String type;

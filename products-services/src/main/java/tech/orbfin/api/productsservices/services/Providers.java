@@ -117,10 +117,9 @@ public class Providers {
                 for (Address addr : providersByAddress) {
                     Provider provider = addr.getProvider();
                     Long providerID = provider.getId();
-
                     List<Long> services = new ArrayList<>();
-
                     String serviceIDs = iRepositoryProviders.getProviderServices(providerID);
+                    log.info(String.valueOf(serviceIDs));
 
                     if (serviceIDs != null && !serviceIDs.isEmpty()) {
                         serviceIDs = serviceIDs.replaceAll("^'|'$", "").trim();
@@ -132,18 +131,21 @@ public class Providers {
 
                     for(Long serviceID : services) {
                         Service service = iRepositoryServices.getServiceByID(serviceID);
+                        log.info(String.valueOf(serviceID));
 
-                        if (service.getType().equals(type)) {
-                            providers.add(provider);
-                        }
-
-                        if (price != null && price > 0) {
-                            if (price <= service.getPrice()) {
-                                providerList.add(provider.getId());
-                                break;
+                        if (service != null) {
+                            if (service.getType().equals(type)) {
+                                providers.add(provider);
                             }
-                        } else {
-                            providerList.add(provider.getId());
+
+                            if (price != null && price > 0) {
+                                if (price <= service.getPrice()) {
+                                    providerList.add(provider.getId());
+                                    break;
+                                }
+                            } else {
+                                providerList.add(provider.getId());
+                            }
                         }
                     }
                 }
@@ -217,6 +219,16 @@ public class Providers {
             }
 
             ResponseProviders responseProviders = by(price, type, address, coordinates);
+
+            if(responseProviders.getErrorMessage() != null) {
+
+                ResponseServiceRequest response = ResponseServiceRequest.builder()
+                        .errorMessage(responseProviders.getErrorMessage())
+                        .statusCode(HttpStatus.OK.value())
+                        .build();
+
+                return response;
+            }
 
             List<Long> providerIDList = responseProviders.getProviders();
 
