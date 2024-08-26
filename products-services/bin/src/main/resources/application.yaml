@@ -17,9 +17,6 @@ spring:
       ddl-auto: update
     show-sql: true
 
-  kafka:
-    hostURL: ${SERVICES_KAFKA_HOST:localhost:9094}
-
 logging:
   level:
     org.apache.kafka: DEBUG

@@ -32,7 +32,6 @@ import java.util.List;
 public class Services {
     private final IRepositoryServices iRepositoryServices;
     private final EntityManager entityManager;
-//    private final KafkaTemplate<String, RequestService> kafkaTemplate;
 
     public ResponseServices all() throws Exception {
         try {
