@@ -1,11 +1,5 @@
 package tech.orbfin.api.productsservices.services;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-
 import jakarta.transaction.Transactional;
 
 import lombok.AllArgsConstructor;
@@ -14,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.kafka.core.KafkaTemplate;
+
 import tech.orbfin.api.productsservices.configurations.ConfigKafkaTopics;
 
 import tech.orbfin.api.productsservices.model.Address;
@@ -22,17 +17,17 @@ import tech.orbfin.api.productsservices.model.Provider;
 import tech.orbfin.api.productsservices.model.Service;
 
 import tech.orbfin.api.productsservices.model.request.RequestProvider;
-import tech.orbfin.api.productsservices.model.request.RequestService;
+import tech.orbfin.api.productsservices.model.request.RequestProviders;
 
+import tech.orbfin.api.productsservices.model.response.ResponseProviderRequest;
 import tech.orbfin.api.productsservices.model.response.ResponseProviders;
-import tech.orbfin.api.productsservices.model.response.ResponseServiceRequest;
+import tech.orbfin.api.productsservices.model.response.ResponseProvidersRequest;
 
 import tech.orbfin.api.productsservices.repositories.IRepositoryProviders;
 import tech.orbfin.api.productsservices.repositories.IRepositoryServices;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,78 +36,25 @@ import java.util.stream.Collectors;
 @Transactional
 @org.springframework.stereotype.Service
 public class Providers {
+    private final Search search;
+    private  final ConfigKafkaTopics configKafkaTopics;
     private final IRepositoryServices iRepositoryServices;
     private final IRepositoryProviders iRepositoryProviders;
-    private final EntityManager entityManager;
-    private final KafkaTemplate<String, RequestProvider> kafkaTemplate;
-
-    public List<Provider> byCoordinates(Coordinates coordinates) throws Exception {
-        try {
-            List<Provider> providers = List.of();
-
-            return providers;
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
-    }
-
-    public List<Address> byAddress(Address address) throws Exception {
-        try {
-            CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-            CriteriaQuery<Address> query = cb.createQuery(Address.class);
-            Root<Address> root = query.from(Address.class);
-
-            Predicate predicate = cb.conjunction();
-
-            String streetAddress = address.getStreetAddress();
-            String city = address.getCity();
-            String state = address.getState();
-            String zipcode = address.getZipcode();
-            String country = address.getCountry();
-
-            if (streetAddress != null && !streetAddress.trim().isEmpty()) {
-                predicate = cb.and(predicate, cb.equal(root.get("streetAddress"), streetAddress));
-            }
-
-            if (city != null && !city.trim().isEmpty()) {
-                predicate = cb.and(predicate, cb.equal(root.get("city"), city));
-            }
-
-            if (state != null && !state.trim().isEmpty()) {
-                predicate = cb.and(predicate, cb.equal(root.get("state"), state));
-            }
-
-            if (zipcode != null && !zipcode.trim().isEmpty()) {
-                predicate = cb.and(predicate, cb.equal(root.get("zipcode"), zipcode));
-            }
-
-            if (country != null && !country.trim().isEmpty()) {
-                predicate = cb.and(predicate, cb.equal(root.get("country"), country));
-            }
-
-            query.where(predicate);
-            List<Address> addressList = entityManager.createQuery(query).getResultList();
-
-            log.info("Found {} matching addresses", addressList.size());
-            return addressList;
-        } catch (Exception e) {
-            log.error("Error querying addresses", e);
-            throw new Exception("Error querying addresses: " + e.getMessage(), e);
-        }
-    }
+    private final KafkaTemplate<String, RequestProviders> providersTemplate;
+    private final KafkaTemplate<String, RequestProvider> providerTemplate;
 
     public ResponseProviders by(Double price, String type, Address address, Coordinates coordinates) throws Exception {
         try {
             List<Provider> providers = new ArrayList<>();
             List<Long> providerList = new ArrayList<>();
 
-//            if (coordinates != null) {
-//                List<Provider> providersByCoords = byCoordinates(coordinates);
-//                providers.addAll(providersByCoords);
-//            }
+            if (coordinates != null) {
+                List<Provider> providersByCoords = search.byCoordinates(coordinates);
+                providers.addAll(providersByCoords);
+            }
 
             if (address != null && !address.isEmpty()) {
-                List<Address> providersByAddress = byAddress(address);
+                List<Address> providersByAddress = search.byAddress(address);
 
                 for (Address addr : providersByAddress) {
                     Provider provider = addr.getProvider();
@@ -169,9 +111,17 @@ public class Providers {
         }
     }
 
-    public ResponseServiceRequest request(RequestService request) throws Exception {
+    public String getSubject(String serviceType, String date, String time) {
+        return String.format("A %s was requested for %s at %s", serviceType, date, time);
+    }
+
+    public String getMessage(Provider provider, Service service, String date, String time, Address address, Coordinates coordinates) {
+        return String.format("Hello %s, A %s was requested for %s at %s. The client would like to meet at %s %s, %s %s %s", provider.getName(), service.getType(), date, time, address.getStreetAddress(), address.getCity(), address.getState(), address.getZipcode(), address.getCountry());
+    }
+
+    public ResponseProvidersRequest requestProviders(RequestProviders request) throws Exception {
         try {
-            Long id = request.getId();
+            Long id = request.getServiceID();
             String type = request.getType();
             String date = request.getDate();
             String time = request.getTime();
@@ -179,50 +129,39 @@ public class Providers {
             Address address = request.getAddress();
             Coordinates coordinates = request.getCoordinates();
 
-            String errorMessage = null;
-
             if (id != null) {
                 Service service = iRepositoryServices.getServiceByID(id);
 
                 if (service == null || service.getPrice() < 0) {
-                    errorMessage = "A service is required to schedule.";
+                   throw new Exception("A service is required to schedule.");
                 }
             }
 
             if (type == null) {
-                errorMessage = "A type is required to schedule a service.";
+                throw new Exception("A type is required to schedule a service.");
             }
 
             if (date == null && time == null) {
-                errorMessage = "A date and time is required to schedule a service.";
+                throw new Exception("A date and time is required to schedule a service.");
             }
 
             if (date == null) {
-                errorMessage = "A date is required to schedule a service.";
+                throw new Exception("A date is required to schedule a service.");
             }
 
             if (time == null) {
-                errorMessage = "A time is required to schedule a service.";
+                throw new Exception("A time is required to schedule a service.");
             }
 
             if (address == null && coordinates == null) {
-                errorMessage = "Either an address or coordinates are required to schedule a service.";
-            }
-
-            if (errorMessage != null) {
-                ResponseServiceRequest response = ResponseServiceRequest.builder()
-                        .errorMessage(errorMessage)
-                        .statusCode(HttpStatus.BAD_REQUEST.value())
-                        .build();
-
-                return response;
+                throw new Exception("Either an address or coordinates are required to schedule a service.");
             }
 
             ResponseProviders responseProviders = by(price, type, address, coordinates);
 
             if(responseProviders.getErrorMessage() != null) {
 
-                ResponseServiceRequest response = ResponseServiceRequest.builder()
+                ResponseProvidersRequest response = ResponseProvidersRequest.builder()
                         .errorMessage(responseProviders.getErrorMessage())
                         .statusCode(HttpStatus.OK.value())
                         .build();
@@ -233,7 +172,7 @@ public class Providers {
             List<Long> providerIDList = responseProviders.getProviders();
 
            if(providerIDList.size() > 0) {
-               RequestProvider requestProvider = RequestProvider.builder()
+               RequestProviders requestProviders = RequestProviders.builder()
                        .id(id)
                        .type(type)
                        .date(date)
@@ -244,11 +183,71 @@ public class Providers {
                        .providers(providerIDList)
                        .build();
 
-               kafkaTemplate.send(ConfigKafkaTopics.NOTARY_REQUEST, requestProvider);
+               providersTemplate.send(configKafkaTopics.getTopicByType(type), requestProviders);
            }
 
-            ResponseServiceRequest response = ResponseServiceRequest.builder()
+            ResponseProvidersRequest response = ResponseProvidersRequest.builder()
                     .successMessage("Your request has been received awaiting confirmation please be attentive to your account")
+                    .statusCode(HttpStatus.OK.value())
+                    .build();
+
+            return response;
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    public ResponseProviderRequest requestProvider(RequestProvider request) throws Exception {
+        try {
+            Long providerID = request.getProviderID();
+            Long serviceID = request.getServiceID();
+            String date = request.getDate();
+            String time = request.getTime();
+            Address address = request.getAddress();
+            Coordinates coordinates = request.getCoordinates();
+
+            Provider provider;
+
+            if (providerID != null) {
+                provider = iRepositoryProviders.getProviderByID(providerID);
+            } else {
+                throw new Exception("Provider ID is required to contact the provider.");
+            }
+
+            if (provider == null) {
+                throw new Exception("Provider could not be found.");
+            }
+
+            Service service = null;
+
+            if (serviceID != null) {
+                service = iRepositoryServices.getServiceByID(serviceID);
+            } else {
+                throw new Exception("This service is not available at this time.");
+            }
+
+            if (service == null || service.getType() == null || service.getPrice() <= 0) {
+                throw new Exception("Service could not be found.");
+            }
+
+            String serviceType = service.getType();
+            String subject = getSubject(serviceType, date, time);
+            String message = getMessage(provider, service, date, time, address, coordinates);
+
+            if (subject == "" || message == "") {
+                throw new Exception("There was an error creating the message to the provider.");
+            }
+
+            RequestProvider requestProvider = RequestProvider.builder()
+                    .providerID(providerID)
+                    .subject(subject)
+                    .message(message)
+                    .build();
+
+            providerTemplate.send(ConfigKafkaTopics.PROVIDER_REQUEST, requestProvider);
+
+            ResponseProviderRequest response = ResponseProviderRequest.builder()
+                    .successMessage("Your request has been received awaiting a response from the provider.")
                     .statusCode(HttpStatus.OK.value())
                     .build();
 

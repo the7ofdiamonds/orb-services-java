@@ -9,8 +9,11 @@ import org.springframework.stereotype.Component;
 
 import org.springframework.web.bind.annotation.*;
 
-import tech.orbfin.api.productsservices.model.request.RequestService;
-import tech.orbfin.api.productsservices.model.response.ResponseServiceRequest;
+import tech.orbfin.api.productsservices.model.request.RequestProvider;
+import tech.orbfin.api.productsservices.model.request.RequestProviders;
+
+import tech.orbfin.api.productsservices.model.response.ResponseProviderRequest;
+import tech.orbfin.api.productsservices.model.response.ResponseProvidersRequest;
 
 import tech.orbfin.api.productsservices.services.Providers;
 
@@ -21,13 +24,26 @@ import tech.orbfin.api.productsservices.services.Providers;
 public class ProvidersController {
     public final Providers providers;
 
-    @PostMapping(value = "/request/{id}", consumes = "application/json")
-    public ResponseEntity<ResponseServiceRequest> request(@PathVariable("id") Integer id, @RequestBody RequestService request) throws Exception {
+    @PostMapping(value = "/providers", consumes = "application/json")
+    public ResponseEntity<ResponseProvidersRequest> providers(@RequestBody RequestProviders request) throws Exception {
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(providers.request(request));
+            return ResponseEntity.status(HttpStatus.OK).body(providers.requestProviders(request));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseServiceRequest.builder()
+                    .body(ResponseProvidersRequest.builder()
+                            .errorMessage(e.getMessage())
+                            .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                            .build());
+        }
+    }
+
+    @PostMapping(value = "/providers/{id}", consumes = "application/json")
+    public ResponseEntity<ResponseProviderRequest> provider(@PathVariable("id") Integer id, @RequestBody RequestProvider request) throws Exception {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(providers.requestProvider(request));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseProviderRequest.builder()
                             .errorMessage(e.getMessage())
                             .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                             .build());

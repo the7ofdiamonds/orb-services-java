@@ -5,6 +5,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+
 import jakarta.transaction.Transactional;
 
 import lombok.AllArgsConstructor;
@@ -12,11 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 
-import org.springframework.kafka.core.KafkaTemplate;
-
 import tech.orbfin.api.productsservices.model.Address;
 import tech.orbfin.api.productsservices.model.Coordinates;
-import tech.orbfin.api.productsservices.model.request.RequestService;
 import tech.orbfin.api.productsservices.model.response.ResponseService;
 import tech.orbfin.api.productsservices.model.response.ResponseServices;
 import tech.orbfin.api.productsservices.model.Service;

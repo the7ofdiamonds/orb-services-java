@@ -24,7 +24,7 @@ import tech.orbfin.api.productsservices.services.Services;
 public class ServicesController {
     public final Services services;
 
-    @GetMapping("/")
+    @GetMapping("/services")
     public ResponseEntity<ResponseServices> services() throws Exception {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(services.all());
@@ -37,7 +37,7 @@ public class ServicesController {
         }
     }
 
-    @GetMapping("/type/{type}")
+    @GetMapping("/services/type/{type}")
     public ResponseEntity<ResponseServices> servicesByType(@PathVariable("type") String type) throws Exception {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(services.byType(type));
@@ -50,7 +50,7 @@ public class ServicesController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/services/{id}")
     public ResponseEntity<ResponseService> service(@PathVariable("id") Long id) throws Exception {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(services.byID(id));
@@ -63,7 +63,7 @@ public class ServicesController {
         }
     }
 
-    @PostMapping("/")
+    @PostMapping("/services")
     public ResponseEntity<ResponseServices> servicesBy(@RequestBody RequestServices request) throws Exception {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(services.by(request.getType(), request.getPrice(), request.getAddress(), request.getCoordinates()));

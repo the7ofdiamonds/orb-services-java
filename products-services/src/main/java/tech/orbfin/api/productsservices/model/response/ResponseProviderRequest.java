@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Setter
 @Getter
 @Component
-public class ResponseServiceRequest {
+public class ResponseProviderRequest {
     String successMessage;
     String cautionMessage;
     String errorMessage;
