@@ -61,7 +61,6 @@ public class Providers {
                     Long providerID = provider.getId();
                     List<Long> services = new ArrayList<>();
                     String serviceIDs = iRepositoryProviders.getProviderServices(providerID);
-                    log.info(String.valueOf(serviceIDs));
 
                     if (serviceIDs != null && !serviceIDs.isEmpty()) {
                         serviceIDs = serviceIDs.replaceAll("^'|'$", "").trim();
@@ -73,7 +72,6 @@ public class Providers {
 
                     for(Long serviceID : services) {
                         Service service = iRepositoryServices.getServiceByID(serviceID);
-                        log.info(String.valueOf(serviceID));
 
                         if (service != null) {
                             if (service.getType().equals(type)) {

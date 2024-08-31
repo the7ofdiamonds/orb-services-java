@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import tech.orbfin.api.productsservices.model.request.RequestServices;
 import tech.orbfin.api.productsservices.model.response.ResponseService;
+import tech.orbfin.api.productsservices.model.response.ResponseServiceRequest;
 import tech.orbfin.api.productsservices.model.response.ResponseServices;
 
 import tech.orbfin.api.productsservices.services.Services;
@@ -25,7 +26,7 @@ public class ServicesController {
     public final Services services;
 
     @GetMapping("/services")
-    public ResponseEntity<ResponseServices> services() throws Exception {
+    public ResponseEntity<ResponseServices> servicesAll() throws Exception {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(services.all());
         } catch (Exception e) {
@@ -63,13 +64,13 @@ public class ServicesController {
         }
     }
 
-    @PostMapping("/services")
-    public ResponseEntity<ResponseServices> servicesBy(@RequestBody RequestServices request) throws Exception {
+    @PostMapping("/services/{id}/request")
+    public ResponseEntity<ResponseServiceRequest> serviceRequest(@RequestBody RequestServices request) throws Exception {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(services.by(request.getType(), request.getPrice(), request.getAddress(), request.getCoordinates()));
+            return ResponseEntity.status(HttpStatus.CREATED).body(services.requestServices(request));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseServices.builder()
+                    .body(ResponseServiceRequest.builder()
                             .errorMessage(e.getMessage())
                             .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                             .build());

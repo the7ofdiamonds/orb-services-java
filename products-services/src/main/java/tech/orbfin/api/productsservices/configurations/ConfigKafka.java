@@ -23,6 +23,7 @@ import java.util.Map;
 
 import tech.orbfin.api.productsservices.model.request.RequestProviders;
 import tech.orbfin.api.productsservices.model.request.RequestProvider;
+import tech.orbfin.api.productsservices.model.request.RequestServices;
 
 @Configuration
 public class ConfigKafka {
@@ -69,6 +70,23 @@ public class ConfigKafka {
     @Bean
     public KafkaTemplate<String, RequestProvider> requestProviderTemplate() {
         return new KafkaTemplate<>(requestProviderProducerFactory());
+    }
+
+    @Bean
+    public ProducerFactory<String, RequestServices> requestServicesProducerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, hostURL);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        configProps.put(JsonSerializer.TYPE_MAPPINGS, "RequestProviders:tech.orbfin.api.productsservices.model.request.RequestProviders");
+
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Bean
+    public KafkaTemplate<String, RequestServices> requestServicesTemplate() {
+        return new KafkaTemplate<>(requestServicesProducerFactory());
     }
 
     @Bean

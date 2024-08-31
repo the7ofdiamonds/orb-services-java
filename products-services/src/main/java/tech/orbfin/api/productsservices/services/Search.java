@@ -9,10 +9,12 @@ import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import tech.orbfin.api.productsservices.model.Address;
 import tech.orbfin.api.productsservices.model.Coordinates;
 import tech.orbfin.api.productsservices.model.Provider;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -24,7 +26,7 @@ public class Search {
 
     public List<Provider> byCoordinates(Coordinates coordinates) throws Exception {
         try {
-            List<Provider> providers = List.of();
+            List<Provider> providers = new ArrayList<>();
 
             return providers;
         } catch (Exception e) {

@@ -29,4 +29,8 @@ public class Coordinates {
     @JoinColumn(name = "provider_id", nullable = false)
     @JsonIgnore
     private Provider provider;
+
+    public Boolean isEmpty() {
+        return latitude == null && longitude == null;
+    }
 }

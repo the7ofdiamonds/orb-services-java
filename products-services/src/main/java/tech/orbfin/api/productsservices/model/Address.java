@@ -33,10 +33,10 @@ public class Address {
     public Boolean isEmpty() {
         if (
             (streetAddress == null || streetAddress.isEmpty()) &&
-                    (city == null || city.isEmpty()) &&
-                    (state == null || state.isEmpty()) &&
-                    (zipcode == null || zipcode.isEmpty()) &&
-                    (country == null || country.isEmpty())
+            (city == null || city.isEmpty()) &&
+            (state == null || state.isEmpty()) &&
+            (zipcode == null || zipcode.isEmpty()) &&
+            (country == null || country.isEmpty())
         ) {
             return true;
         } else {
